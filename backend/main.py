@@ -37,6 +37,8 @@ app.add_middleware(
 class AdminNotifyRequest(BaseModel):
     message: str
     admin_id: str
+    to_channel: bool = True
+    to_chat: bool = True
 
 def verify_telegram_auth(init_data: str):
     # Валидация init_data от Telegram
@@ -69,15 +71,17 @@ async def admin_notify(req: AdminNotifyRequest):
     if not allowed_admin_id or req.admin_id != allowed_admin_id:
         raise HTTPException(status_code=403, detail="Доступ запрещен: неверный ID или настройки сервера")
     
-    # Формируем объект для отправки (имитируем структуру из twitch_tracker если нужно, 
-    # либо вызываем напрямую метод отправки текста)
+    # Формируем объект для отправки
     try:
-        # В twitch_tracker.py добавим метод для отправки простого текста
-        success = await tracker.send_custom_notification(req.message)
+        success = await tracker.send_custom_notification(
+            text=req.message,
+            to_channel=req.to_channel,
+            to_chat=req.to_chat
+        )
         if success:
             return {"status": "success", "message": "Уведомление отправлено!"}
         else:
-            return {"status": "error", "message": "Ошибка при отправке"}
+            return {"status": "error", "message": "Ошибка при отправке (проверьте выбор получателей)"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

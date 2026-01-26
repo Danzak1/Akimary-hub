@@ -12,6 +12,7 @@ CLIENT_SECRET = os.getenv("TWITCH_CLIENT_SECRET")
 # Telegram credentials
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 # User to track
 TWITCH_USERNAME = "akimaryy"
 
@@ -82,8 +83,14 @@ class TwitchTracker:
                 logger.error(f"Error checking stream status: {e}")
 
     async def send_telegram_notification(self, stream_info):
-        if not BOT_TOKEN or not CHANNEL_ID:
-            logger.warning("TELEGRAM_BOT_TOKEN or TELEGRAM_CHANNEL_ID not set")
+        if not BOT_TOKEN:
+            logger.warning("TELEGRAM_BOT_TOKEN not set")
+            return
+
+        # Список получателей (канал и чат)
+        recipients = [r for r in [CHANNEL_ID, CHAT_ID] if r]
+        if not recipients:
+            logger.warning("No recipients (Channel/Chat ID) set")
             return
 
         title = stream_info.get("title", "Без названия")
@@ -98,46 +105,60 @@ class TwitchTracker:
         )
 
         tg_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        payload = {
-            "chat_id": CHANNEL_ID,
-            "text": message,
-            "parse_mode": "Markdown"
-        }
-
+        
         async with httpx.AsyncClient() as client:
-            try:
-                resp = await client.post(tg_url, json=payload)
-                if resp.status_code == 200:
-                    logger.info("Telegram notification sent successfully")
-                else:
-                    logger.error(f"Failed to send Telegram notification: {resp.text}")
-            except Exception as e:
-                logger.error(f"Error sending Telegram notification: {e}")
+            for rid in recipients:
+                try:
+                    payload = {
+                        "chat_id": rid,
+                        "text": message,
+                        "parse_mode": "Markdown"
+                    }
+                    resp = await client.post(tg_url, json=payload)
+                    if resp.status_code == 200:
+                        logger.info(f"Telegram notification sent to {rid}")
+                    else:
+                        logger.error(f"Failed to send to {rid}: {resp.text}")
+                except Exception as e:
+                    logger.error(f"Error sending to {rid}: {e}")
 
-    async def send_custom_notification(self, text):
-        if not BOT_TOKEN or not CHANNEL_ID:
-            logger.warning("TELEGRAM_BOT_TOKEN or TELEGRAM_CHANNEL_ID not set")
+    async def send_custom_notification(self, text, to_channel=True, to_chat=True):
+        if not BOT_TOKEN:
+            logger.warning("TELEGRAM_BOT_TOKEN not set")
+            return False
+
+        # Формируем список на основе выбора админа
+        recipients = []
+        if to_channel and CHANNEL_ID:
+            recipients.append(CHANNEL_ID)
+        if to_chat and CHAT_ID:
+            recipients.append(CHAT_ID)
+
+        if not recipients:
+            logger.warning("No destinations selected for manual notification")
             return False
 
         tg_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        payload = {
-            "chat_id": CHANNEL_ID,
-            "text": text,
-            "parse_mode": "Markdown"
-        }
-
+        
+        success_count = 0
         async with httpx.AsyncClient() as client:
-            try:
-                resp = await client.post(tg_url, json=payload)
-                if resp.status_code == 200:
-                    logger.info("Custom Telegram notification sent")
-                    return True
-                else:
-                    logger.error(f"Failed to send custom notification: {resp.text}")
-                    return False
-            except Exception as e:
-                logger.error(f"Error sending custom notification: {e}")
-                return False
+            for rid in recipients:
+                try:
+                    payload = {
+                        "chat_id": rid,
+                        "text": text,
+                        "parse_mode": "Markdown"
+                    }
+                    resp = await client.post(tg_url, json=payload)
+                    if resp.status_code == 200:
+                        logger.info(f"Custom notification sent to {rid}")
+                        success_count += 1
+                    else:
+                        logger.error(f"Failed to send custom to {rid}: {resp.text}")
+                except Exception as e:
+                    logger.error(f"Error sending custom to {rid}: {e}")
+        
+        return success_count > 0
 
 tracker = TwitchTracker()
 

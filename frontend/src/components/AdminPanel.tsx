@@ -5,6 +5,8 @@ export const AdminPanel: React.FC = () => {
     const { user } = useTelegram();
     const [message, setMessage] = useState('');
     const [adminId, setAdminId] = useState('');
+    const [targetChannel, setTargetChannel] = useState(true);
+    const [targetChat, setTargetChat] = useState(true);
     const [status, setStatus] = useState<{ type: 'success' | 'error' | 'none', msg: string }>({ type: 'none', msg: '' });
     const [isLoading, setIsLoading] = useState(false);
 
@@ -12,7 +14,7 @@ export const AdminPanel: React.FC = () => {
     const IS_ADMIN = user?.id?.toString() === '641407863' || adminId === '641407863';
 
     const handleSend = async () => {
-        if (!message) return;
+        if (!message || (!targetChannel && !targetChat)) return;
         setIsLoading(true);
         setStatus({ type: 'none', msg: '' });
 
@@ -26,6 +28,8 @@ export const AdminPanel: React.FC = () => {
                 body: JSON.stringify({
                     message,
                     admin_id: adminId || user?.id?.toString() || '',
+                    to_channel: targetChannel,
+                    to_chat: targetChat
                 }),
             });
 
@@ -72,10 +76,33 @@ export const AdminPanel: React.FC = () => {
                     onChange={(e) => setMessage(e.target.value)}
                 />
 
+                <div className="flex gap-4 px-1">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                            type="checkbox"
+                            checked={targetChannel}
+                            onChange={(e) => setTargetChannel(e.target.checked)}
+                            className="w-4 h-4 rounded border-white/10 bg-black/20 text-tg-button focus:ring-tg-button/30"
+                        />
+                        <span className="text-xs text-white/60 group-hover:text-white transition-colors">Канал</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                            type="checkbox"
+                            checked={targetChat}
+                            onChange={(e) => setTargetChat(e.target.checked)}
+                            className="w-4 h-4 rounded border-white/10 bg-black/20 text-tg-button focus:ring-tg-button/30"
+                        />
+                        <span className="text-xs text-white/60 group-hover:text-white transition-colors">Чат</span>
+                    </label>
+                </div>
+
                 <button
                     onClick={handleSend}
-                    disabled={isLoading || !message}
-                    className={`w-full py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${isLoading ? 'bg-tg-button/50 cursor-not-allowed' : 'bg-tg-button hover:opacity-90 active:scale-[0.98]'
+                    disabled={isLoading || !message || (!targetChannel && !targetChat)}
+                    className={`w-full py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${isLoading || !message || (!targetChannel && !targetChat)
+                            ? 'bg-tg-button/50 cursor-not-allowed opacity-50'
+                            : 'bg-tg-button hover:opacity-90 active:scale-[0.98]'
                         }`}
                 >
                     {isLoading ? (
@@ -83,7 +110,7 @@ export const AdminPanel: React.FC = () => {
                     ) : (
                         <>
                             <i className="fa-solid fa-paper-plane"></i>
-                            Отправить в Telegram
+                            Отправить
                         </>
                     )}
                 </button>
