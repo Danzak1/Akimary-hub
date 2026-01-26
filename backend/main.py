@@ -50,23 +50,40 @@ class SuggestionCreate(BaseModel):
 
 
 
+import urllib.parse
+
 def verify_telegram_auth(init_data: str):
     # Валидация init_data от Telegram
-    # Требуется BOT_TOKEN
     token = os.getenv("TELEGRAM_BOT_TOKEN")
-    if not token or not init_data:
+    if not token:
+        print("ERROR: TELEGRAM_BOT_TOKEN is not set!")
+        return False
+    if not init_data:
+        print("DEBUG: init_data is empty")
         return False
     
     try:
-        params = dict(item.split("=") for item in init_data.split("&"))
+        # Используем parse_qsl для корректной обработки URL-кодированных параметров
+        params = dict(urllib.parse.parse_qsl(init_data))
+        if "hash" not in params:
+            print("DEBUG: 'hash' not found in init_data")
+            return False
+            
         hash_val = params.pop("hash")
+        # Формируем строку проверки согласно документации Telegram
         data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(params.items()))
         
+        # Расчет HMAC-SHA256
         secret_key = hmac.new(b"WebAppData", token.encode(), hashlib.sha256).digest()
         calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
         
-        return calculated_hash == hash_val
-    except Exception:
+        if calculated_hash != hash_val:
+            print(f"DEBUG: Hash mismatch! Calc: {calculated_hash}, Recv: {hash_val}")
+            return False
+            
+        return True
+    except Exception as e:
+        print(f"ERROR: Exception in verify_telegram_auth: {str(e)}")
         return False
 
 @app.get("/")
