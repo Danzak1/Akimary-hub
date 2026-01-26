@@ -8,10 +8,13 @@ import hashlib
 import time
 import asyncio
 from dotenv import load_dotenv
-from database import get_db, Subscriber as DBSubscriber
-from twitch_tracker import start_tracker_loop
+from database import engine, Base
+from twitch_tracker import start_tracker_loop, tracker
 
 load_dotenv()
+
+# Создание таблиц (если они остались/изменились)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Akimary Hub API")
 
@@ -22,16 +25,18 @@ async def startup_event():
 
 
 # Настройка CORS
+frontend_url = os.getenv("FRONTEND_URL", "*") # В идеале указать конкретный URL в Render
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # В продакшне стоит ограничить
+    allow_origins=[frontend_url] if frontend_url != "*" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-class SubscriberRequest(BaseModel):
-    email: EmailStr
+class AdminNotifyRequest(BaseModel):
+    message: str
+    admin_id: str
 
 def verify_telegram_auth(init_data: str):
     # Валидация init_data от Telegram
@@ -56,18 +61,25 @@ def verify_telegram_auth(init_data: str):
 async def root():
     return {"status": "ok", "service": "Akimary Hub API"}
 
-@app.post("/subscribe")
-async def subscribe(req: SubscriberRequest, db: Session = Depends(get_db)):
-    # Проверяем, существует ли уже такой email
-    existing = db.query(DBSubscriber).filter(DBSubscriber.email == req.email).first()
-    if existing:
-        return {"status": "already_subscribed", "message": "Вы уже подписаны!"}
+@app.post("/admin/notify")
+async def admin_notify(req: AdminNotifyRequest):
+    # Строгая проверка Admin ID только из переменных окружения
+    allowed_admin_id = os.getenv("ADMIN_TG_ID")
     
-    new_sub = DBSubscriber(email=req.email)
-    db.add(new_sub)
-    db.commit()
+    if not allowed_admin_id or req.admin_id != allowed_admin_id:
+        raise HTTPException(status_code=403, detail="Доступ запрещен: неверный ID или настройки сервера")
     
-    return {"status": "success", "message": "Подписка оформлена!"}
+    # Формируем объект для отправки (имитируем структуру из twitch_tracker если нужно, 
+    # либо вызываем напрямую метод отправки текста)
+    try:
+        # В twitch_tracker.py добавим метод для отправки простого текста
+        success = await tracker.send_custom_notification(req.message)
+        if success:
+            return {"status": "success", "message": "Уведомление отправлено!"}
+        else:
+            return {"status": "error", "message": "Ошибка при отправке"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
 async def health():

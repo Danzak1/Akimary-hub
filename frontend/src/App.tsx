@@ -1,6 +1,6 @@
 import { useTelegram } from './hooks/useTelegram';
 import { LinkCard } from './components/LinkCard';
-import { MailingSection } from './components/MailingSection';
+import { AdminPanel } from './components/AdminPanel';
 
 interface LinkItem {
   id: string;
@@ -116,9 +116,9 @@ function App() {
         ))}
       </div>
 
-      {/* Mailing List */}
+      {/* Admin Panel */}
       <div className="w-full mt-4">
-        <MailingSection />
+        <AdminPanel />
       </div>
 
       {/* Footer */}

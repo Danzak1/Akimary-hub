@@ -114,6 +114,31 @@ class TwitchTracker:
             except Exception as e:
                 logger.error(f"Error sending Telegram notification: {e}")
 
+    async def send_custom_notification(self, text):
+        if not BOT_TOKEN or not CHANNEL_ID:
+            logger.warning("TELEGRAM_BOT_TOKEN or TELEGRAM_CHANNEL_ID not set")
+            return False
+
+        tg_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": CHANNEL_ID,
+            "text": text,
+            "parse_mode": "Markdown"
+        }
+
+        async with httpx.AsyncClient() as client:
+            try:
+                resp = await client.post(tg_url, json=payload)
+                if resp.status_code == 200:
+                    logger.info("Custom Telegram notification sent")
+                    return True
+                else:
+                    logger.error(f"Failed to send custom notification: {resp.text}")
+                    return False
+            except Exception as e:
+                logger.error(f"Error sending custom notification: {e}")
+                return False
+
 tracker = TwitchTracker()
 
 async def start_tracker_loop():
