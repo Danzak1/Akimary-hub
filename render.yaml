@@ -1,0 +1,29 @@
+services:
+  # Бэкенд на FastAPI
+  - type: web
+    name: akimary-hub-api
+    env: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: TWITCH_CLIENT_ID
+        sync: false
+      - key: TWITCH_CLIENT_SECRET
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHANNEL_ID
+        sync: false
+
+  # Фронтенд на React (Static Site)
+  - type: static
+    name: akimary-hub-ui
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    publishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: akimary-hub-api
+          type: web
+          property: host

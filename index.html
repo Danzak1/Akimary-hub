@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akimary Hub</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --tg-bg: var(--tg-theme-bg-color, #1a1a1a);
+            --tg-text: var(--tg-theme-text-color, #ffffff);
+            --twitch: #9146ff;
+            --discord: #5865F2;
+            --telegram: #0088cc;
+            --accent: #bb86fc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-bg);
+            color: var(--tg-text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 { margin: 10px 0 5px; font-size: 24px; }
+        .header p { opacity: 0.8; font-size: 14px; }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .section-title {
+            text-align: left;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            opacity: 0.6;
+            padding-left: 5px;
+        }
+
+        .link-card {
+            display: flex;
+            align-items: center;
+            background: var(--tg-theme-secondary-bg-color, rgba(255,255,255,0.05));
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            text-decoration: none;
+            color: var(--tg-text);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.2s;
+        }
+
+        .link-card:active {
+            transform: scale(0.98);
+        }
+
+        .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 15px;
+            color: white;
+        }
+
+        .info { flex-grow: 1; text-align: left; }
+        .info span { display: block; font-weight: bold; font-size: 16px; }
+        .info small { opacity: 0.6; font-size: 12px; }
+
+        /* Цвета брендов */
+        .bg-twitch { background-color: var(--twitch); }
+        .bg-discord { background-color: var(--discord); }
+        .bg-telegram { background-color: var(--telegram); }
+
+        .footer {
+            margin-top: auto;
+            padding: 20px;
+            font-size: 12px;
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 id="user-name">Akimary Hub</h1>
+        <p>Сборки, контент и комьюнити</p>
+    </div>
+
+    <div class="container">
+        <div class="section-title">Наши соцсети</div>
+        
+        <a href="https://t.me/akimaryyy" class="link-card">
+            <div class="icon bg-telegram"><i class="fab fa-telegram-plane"></i></div>
+            <div class="info">
+                <span>Telegram Канал</span>
+                <small>Новости и анонсы</small>
+            </div>
+            <i class="fas fa-chevron-right"></i>
+        </a>
+
+        <a href="https://www.twitch.tv/akimaryy" class="link-card">
+            <div class="icon bg-twitch"><i class="fab fa-twitch"></i></div>
+            <div class="info">
+                <span>Twitch</span>
+                <small>Прямые трансляции</small>
+            </div>
+            <i class="fas fa-chevron-right"></i>
+        </a>
+
+        <a href="https://discord.gg/sBQH3968d" class="link-card">
+            <div class="icon bg-discord"><i class="fab fa-discord"></i></div>
+            <div class="info">
+                <span>Discord</span>
+                <small>Наше сообщество</small>
+            </div>
+            <i class="fas fa-chevron-right"></i>
+        </a>
+    </div>
+
+    <div class="footer">
+        Powered by Akimary & Telegram SDK
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        // Приветствие по имени из Telegram
+        if (tg.initDataUnsafe?.user) {
+            document.getElementById('user-name').innerText = `Akimary x ${tg.initDataUnsafe.user.first_name}`;
+        }
+    </script>
+</body>
+</html>
