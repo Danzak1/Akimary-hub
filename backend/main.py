@@ -8,8 +8,11 @@ import hashlib
 import time
 import asyncio
 from dotenv import load_dotenv
-from database import engine, Base
 from twitch_tracker import start_tracker_loop, tracker
+from database import engine, Base, SessionLocal, Suggestion
+
+# Список ID администраторов
+ADMIN_IDS = [int(id.strip()) for id in os.getenv("ADMIN_IDS", "").split(",") if id.strip()]
 
 load_dotenv()
 
@@ -33,6 +36,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Dependency для получения сессии БД
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+class SuggestionCreate(BaseModel):
+    content: str
+    init_data: str # Для валидации
 
 
 
@@ -64,6 +79,59 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+@app.post("/suggestions")
+async def create_suggestion(suggestion: SuggestionCreate, db: Session = Depends(get_db)):
+    if not verify_telegram_auth(suggestion.init_data):
+        raise HTTPException(status_code=401, detail="Invalid auth")
+    
+    # Извлечение user_id и username из init_data
+    try:
+        params = dict(item.split("=") for item in suggestion.init_data.split("&"))
+        # В init_data user обычно лежит в ключе user в формате JSON
+        # Но простейший способ достать из initData - это распарсить user
+        import json
+        import urllib.parse
+        user_data_raw = urllib.parse.unquote(params.get("user", "{}"))
+        user_data = json.loads(user_data_raw)
+        
+        user_id = user_data.get("id")
+        username = user_data.get("username") or user_data.get("first_name", "Unknown")
+        
+        if not user_id:
+            raise HTTPException(status_code=400, detail="User ID not found")
+            
+        new_suggestion = Suggestion(
+            user_id=user_id,
+            username=username,
+            content=suggestion.content
+        )
+        db.add(new_suggestion)
+        db.commit()
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/suggestions")
+async def list_suggestions(init_data: str = Header(None), db: Session = Depends(get_db)):
+    if not init_data or not verify_telegram_auth(init_data):
+        raise HTTPException(status_code=401, detail="Invalid auth")
+        
+    try:
+        import json
+        import urllib.parse
+        params = dict(item.split("=") for item in init_data.split("&"))
+        user_data_raw = urllib.parse.unquote(params.get("user", "{}"))
+        user_data = json.loads(user_data_raw)
+        user_id = user_data.get("id")
+        
+        if user_id not in ADMIN_IDS:
+            raise HTTPException(status_code=403, detail="Access denied")
+            
+        suggestions = db.query(Suggestion).order_by(Suggestion.created_at.desc()).all()
+        return suggestions
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

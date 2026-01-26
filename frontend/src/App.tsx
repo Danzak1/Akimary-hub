@@ -1,5 +1,7 @@
 import { useTelegram } from './hooks/useTelegram';
 import { LinkCard } from './components/LinkCard';
+import { SuggestionsSection } from './components/SuggestionsSection';
+import { useState } from 'react';
 
 interface LinkItem {
   id: string;
@@ -79,6 +81,7 @@ const LINKS: LinkItem[] = [
 
 function App() {
   const { user } = useTelegram();
+  const [activeTab, setActiveTab] = useState<'links' | 'suggestions'>('links');
 
   return (
     <div className="min-h-screen w-full max-w-md mx-auto px-4 py-8 flex flex-col items-center">
@@ -97,23 +100,49 @@ function App() {
         <p className="text-white/40 mt-2 font-medium">Стример, контентмейкер и твоя любимая мамуля</p>
       </div>
 
-      {/* Main Links */}
-      <div className="w-full space-y-4">
-        <p className="text-[10px] uppercase tracking-widest text-white/30 font-bold ml-2">Главное</p>
-        {LINKS.filter(l => l.category === 'main').map(link => (
-          <LinkCard key={link.id} link={link} />
-        ))}
+      {/* Navigation - Only show if user is present (Telegram) */}
+      {user && (
+        <div className="w-full flex p-1 bg-white/5 rounded-2xl mb-8 border border-white/5">
+          <button
+            onClick={() => setActiveTab('links')}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'links' ? 'bg-white/10 text-white shadow-lg' : 'text-white/40 hover:text-white/60'
+              }`}
+          >
+            <i className="fa-solid fa-link mr-2"></i>
+            Ссылки
+          </button>
+          <button
+            onClick={() => setActiveTab('suggestions')}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'suggestions' ? 'bg-white/10 text-white shadow-lg' : 'text-white/40 hover:text-white/60'
+              }`}
+          >
+            <i className="fa-solid fa-lightbulb mr-2"></i>
+            Предложения
+          </button>
+        </div>
+      )}
 
-        <p className="text-[10px] uppercase tracking-widest text-white/30 font-bold ml-2 mt-6">Стримы и видео</p>
-        {LINKS.filter(l => l.category === 'media').map(link => (
-          <LinkCard key={link.id} link={link} />
-        ))}
+      {/* Content */}
+      {activeTab === 'links' ? (
+        <div className="w-full space-y-4">
+          <p className="text-[10px] uppercase tracking-widest text-white/30 font-bold ml-2">Главное</p>
+          {LINKS.filter(l => l.category === 'main').map(link => (
+            <LinkCard key={link.id} link={link} />
+          ))}
 
-        <p className="text-[10px] uppercase tracking-widest text-white/30 font-bold ml-2 mt-6">Прочее</p>
-        {LINKS.filter(l => l.category === 'other').map(link => (
-          <LinkCard key={link.id} link={link} />
-        ))}
-      </div>
+          <p className="text-[10px] uppercase tracking-widest text-white/30 font-bold ml-2 mt-6">Стримы и видео</p>
+          {LINKS.filter(l => l.category === 'media').map(link => (
+            <LinkCard key={link.id} link={link} />
+          ))}
+
+          <p className="text-[10px] uppercase tracking-widest text-white/30 font-bold ml-2 mt-6">Прочее</p>
+          {LINKS.filter(l => l.category === 'other').map(link => (
+            <LinkCard key={link.id} link={link} />
+          ))}
+        </div>
+      ) : (
+        <SuggestionsSection />
+      )}
 
 
 

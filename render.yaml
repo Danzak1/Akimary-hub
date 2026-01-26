@@ -16,6 +16,8 @@ services:
         sync: false
       - key: TELEGRAM_CHAT_ID
         sync: false
+      - key: ADMIN_IDS
+        sync: false
 
   # Фронтенд на React (Static Site)
   - type: static
@@ -29,3 +31,5 @@ services:
           name: akimary-hub-api
           type: web
           property: host
+      - key: VITE_ADMIN_IDS
+        sync: false
