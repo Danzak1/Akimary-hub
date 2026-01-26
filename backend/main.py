@@ -11,10 +11,9 @@ from dotenv import load_dotenv
 from twitch_tracker import start_tracker_loop, tracker
 from database import engine, Base, SessionLocal, Suggestion
 
+load_dotenv()
 # Список ID администраторов
 ADMIN_IDS = [int(id.strip()) for id in os.getenv("ADMIN_IDS", "").split(",") if id.strip()]
-
-load_dotenv()
 
 # Создание таблиц (если они остались/изменились)
 Base.metadata.create_all(bind=engine)
