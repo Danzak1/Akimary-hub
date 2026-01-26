@@ -34,11 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class AdminNotifyRequest(BaseModel):
-    message: str
-    admin_id: str
-    to_channel: bool = True
-    to_chat: bool = True
+
 
 def verify_telegram_auth(init_data: str):
     # Валидация init_data от Telegram
@@ -63,27 +59,7 @@ def verify_telegram_auth(init_data: str):
 async def root():
     return {"status": "ok", "service": "Akimary Hub API"}
 
-@app.post("/admin/notify")
-async def admin_notify(req: AdminNotifyRequest):
-    # Строгая проверка Admin ID только из переменных окружения
-    allowed_admin_id = os.getenv("ADMIN_TG_ID")
-    
-    if not allowed_admin_id or req.admin_id != allowed_admin_id:
-        raise HTTPException(status_code=403, detail="Доступ запрещен: неверный ID или настройки сервера")
-    
-    # Формируем объект для отправки
-    try:
-        success = await tracker.send_custom_notification(
-            text=req.message,
-            to_channel=req.to_channel,
-            to_chat=req.to_chat
-        )
-        if success:
-            return {"status": "success", "message": "Уведомление отправлено!"}
-        else:
-            return {"status": "error", "message": "Ошибка при отправке (проверьте выбор получателей)"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/health")
 async def health():
