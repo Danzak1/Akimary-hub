@@ -5,11 +5,6 @@ from datetime import datetime
 
 import os
 
-# Получаем URL базы данных из переменных окружения (для Render/PostgreSQL)
-# Если переменной нет, используем локальный SQLite
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data.db")
-
-# SQLAlchemy требует префикс postgresql:// вместо postgres:// (который дает Render)
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
