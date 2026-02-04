@@ -16,7 +16,7 @@ app = FastAPI(title="Akimary Hub API")
 # Настройка CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # В продакшне стоит ограничить
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,7 +27,7 @@ class SubscriberRequest(BaseModel):
 
 def verify_telegram_auth(init_data: str):
     # Валидация init_data от Telegram
-    # Требуется BOT_TOKEN
+    
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not token or not init_data:
         return False
